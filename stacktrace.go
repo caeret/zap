@@ -22,6 +22,7 @@ package zap
 
 import (
 	"runtime"
+	"strings"
 	"sync"
 
 	"go.uber.org/zap/buffer"
@@ -61,6 +62,56 @@ const (
 	// storage for it if needed.
 	stacktraceFull
 )
+
+// captureStacktrace captures a stack trace of the specified depth, skipping
+// the provided number of frames. skip=0 identifies the caller of
+// captureStacktrace.
+//
+// The caller must call Free on the returned stacktrace after using it.
+func (log *Logger) captureStacktrace(skip int, depth stacktraceDepth) *stacktrace {
+	stack := _stacktracePool.Get().(*stacktrace)
+
+	switch depth {
+	case stacktraceFirst:
+		if log.trimPKGEnabled {
+			stack.pcs = stack.storage
+		} else {
+			stack.pcs = stack.storage[:1]
+		}
+	case stacktraceFull:
+		stack.pcs = stack.storage
+	}
+
+	// Unlike other "skip"-based APIs, skip=0 identifies runtime.Callers
+	// itself. +2 to skip captureStacktrace and runtime.Callers.
+	numFrames := runtime.Callers(
+		skip+2,
+		stack.pcs,
+	)
+
+	// runtime.Callers truncates the recorded stacktrace if there is no
+	// room in the provided slice. For the full stack trace, keep expanding
+	// storage until there are fewer frames than there is room.
+	if depth == stacktraceFull {
+		pcs := stack.pcs
+		for numFrames == len(pcs) {
+			pcs = make([]uintptr, len(pcs)*2)
+			numFrames = runtime.Callers(skip+2, pcs)
+		}
+
+		// Discard old storage instead of returning it to the pool.
+		// This will adjust the pool size over time if stack traces are
+		// consistently very deep.
+		stack.storage = pcs
+		stack.pcs = pcs[:numFrames]
+	} else {
+		stack.pcs = stack.pcs[:numFrames]
+	}
+
+	stack.frames = runtime.CallersFrames(stack.pcs)
+
+	return stack
+}
 
 // captureStacktrace captures a stack trace of the specified depth, skipping
 // the provided number of frames. skip=0 identifies the caller of
@@ -173,4 +224,34 @@ func (sf *stackFormatter) FormatFrame(frame runtime.Frame) {
 	sf.b.AppendString(frame.File)
 	sf.b.AppendByte(':')
 	sf.b.AppendInt(int64(frame.Line))
+}
+
+func pkgFilePath(frame *runtime.Frame) string {
+	pre := pkgPrefix(frame.Function)
+	post := pathSuffix(frame.File)
+	if pre == "" {
+		return post
+	}
+	return pre + "/" + post
+}
+
+// pkgPrefix returns the import path of the function's package with the final
+// segment removed.
+func pkgPrefix(funcName string) string {
+	const pathSep = "/"
+	end := strings.LastIndex(funcName, pathSep)
+	if end == -1 {
+		return ""
+	}
+	return funcName[:end]
+}
+
+// pathSuffix returns the last two segments of path.
+func pathSuffix(path string) string {
+	const pathSep = "/"
+	lastSep := strings.LastIndex(path, pathSep)
+	if lastSep == -1 {
+		return path
+	}
+	return path[strings.LastIndex(path[:lastSep], pathSep)+1:]
 }

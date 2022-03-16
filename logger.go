@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 	"strings"
 
 	"go.uber.org/zap/internal/bufferpool"
@@ -52,6 +53,9 @@ type Logger struct {
 	callerSkip int
 
 	clock zapcore.Clock
+
+	trimPKGEnabled bool
+	trimPKG        []string
 }
 
 // New constructs a new Logger from the provided zapcore.Core and Options. If
@@ -358,7 +362,7 @@ func (log *Logger) check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
 	if addStack {
 		stackDepth = stacktraceFull
 	}
-	stack := captureStacktrace(log.callerSkip+callerSkipOffset, stackDepth)
+	stack := log.captureStacktrace(log.callerSkip+callerSkipOffset, stackDepth)
 	defer stack.Free()
 
 	if stack.Count() == 0 {
@@ -369,7 +373,33 @@ func (log *Logger) check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
 		return ce
 	}
 
-	frame, more := stack.Next()
+	var (
+		frame runtime.Frame
+		more  bool
+	)
+	if log.trimPKGEnabled {
+		a := *stack.frames
+		found := false
+	foo:
+		for frame, more = a.Next(); more; frame, more = a.Next() {
+			path := pkgFilePath(&frame)
+			for _, pkg := range log.trimPKG {
+				if strings.HasPrefix(path, pkg) {
+					found = true
+					continue foo
+				}
+				if !found {
+					continue foo
+				}
+			}
+
+			if found {
+				break
+			}
+		}
+	} else {
+		frame, more = stack.Next()
+	}
 
 	if log.addCaller {
 		ce.Caller = zapcore.EntryCaller{
