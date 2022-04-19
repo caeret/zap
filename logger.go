@@ -54,8 +54,7 @@ type Logger struct {
 
 	clock zapcore.Clock
 
-	trimPKGEnabled bool
-	trimPKG        []string
+	callerPKG string
 }
 
 // New constructs a new Logger from the provided zapcore.Core and Options. If
@@ -377,23 +376,11 @@ func (log *Logger) check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
 		frame runtime.Frame
 		more  bool
 	)
-	if log.trimPKGEnabled {
+	if log.callerPKG != "" {
 		a := *stack.frames
-		found := false
-	foo:
 		for frame, more = a.Next(); more; frame, more = a.Next() {
 			path := pkgFilePath(&frame)
-			for _, pkg := range log.trimPKG {
-				if strings.HasPrefix(path, pkg) {
-					found = true
-					continue foo
-				}
-				if !found {
-					continue foo
-				}
-			}
-
-			if found {
+			if strings.HasPrefix(path, log.callerPKG) {
 				break
 			}
 		}

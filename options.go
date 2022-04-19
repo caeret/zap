@@ -165,9 +165,8 @@ func WithClock(clock zapcore.Clock) Option {
 	})
 }
 
-func WithTrimPKG(pkg ...string) Option {
+func WithCallerPKG(pkg string) Option {
 	return optionFunc(func(logger *Logger) {
-		logger.trimPKGEnabled = len(pkg) > 0
-		logger.trimPKG = pkg
+		logger.callerPKG = pkg
 	})
 }

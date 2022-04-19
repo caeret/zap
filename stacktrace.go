@@ -73,7 +73,7 @@ func (log *Logger) captureStacktrace(skip int, depth stacktraceDepth) *stacktrac
 
 	switch depth {
 	case stacktraceFirst:
-		if log.trimPKGEnabled {
+		if log.callerPKG != "" {
 			stack.pcs = stack.storage
 		} else {
 			stack.pcs = stack.storage[:1]
