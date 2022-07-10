@@ -170,3 +170,11 @@ func WithCallerPKG(pkg string) Option {
 		logger.callerPKG = pkg
 	})
 }
+
+func WithSkipPKG(pkgs ...string) Option {
+	return optionFunc(func(logger *Logger) {
+		for _, pkg := range pkgs {
+			logger.skipPKG[pkg] = struct{}{}
+		}
+	})
+}

@@ -55,6 +55,7 @@ type Logger struct {
 	clock zapcore.Clock
 
 	callerPKG string
+	skipPKG   map[string]struct{}
 }
 
 // New constructs a new Logger from the provided zapcore.Core and Options. If
@@ -76,6 +77,7 @@ func New(core zapcore.Core, options ...Option) *Logger {
 		errorOutput: zapcore.Lock(os.Stderr),
 		addStack:    zapcore.FatalLevel + 1,
 		clock:       zapcore.DefaultClock,
+		skipPKG:     map[string]struct{}{},
 	}
 	return log.WithOptions(options...)
 }
@@ -91,6 +93,7 @@ func NewNop() *Logger {
 		errorOutput: zapcore.AddSync(io.Discard),
 		addStack:    zapcore.FatalLevel + 1,
 		clock:       zapcore.DefaultClock,
+		skipPKG:     map[string]struct{}{},
 	}
 }
 
@@ -378,8 +381,14 @@ func (log *Logger) check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
 	)
 	if log.callerPKG != "" {
 		a := *stack.frames
+	frameCheck:
 		for frame, more = a.Next(); more; frame, more = a.Next() {
 			path := pkgFilePath(&frame)
+			for skip := range log.skipPKG {
+				if strings.HasPrefix(path, skip) {
+					continue frameCheck
+				}
+			}
 			if strings.HasPrefix(path, log.callerPKG) {
 				break
 			}
