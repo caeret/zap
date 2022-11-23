@@ -21,9 +21,9 @@
 package zap
 
 import (
+	"github.com/caeret/zap/internal"
+	"github.com/caeret/zap/zapcore"
 	"go.uber.org/atomic"
-	"go.uber.org/zap/internal"
-	"go.uber.org/zap/zapcore"
 )
 
 const (

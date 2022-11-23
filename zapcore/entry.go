@@ -27,9 +27,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/caeret/zap/internal/bufferpool"
+	"github.com/caeret/zap/internal/exit"
 	"go.uber.org/multierr"
-	"go.uber.org/zap/internal/bufferpool"
-	"go.uber.org/zap/internal/exit"
 )
 
 var (

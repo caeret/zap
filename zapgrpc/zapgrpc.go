@@ -24,8 +24,8 @@ package zapgrpc // import "go.uber.org/zap/zapgrpc"
 import (
 	"fmt"
 
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	"github.com/caeret/zap"
+	"github.com/caeret/zap/zapcore"
 )
 
 // See https://github.com/grpc/grpc-go/blob/v1.35.0/grpclog/loggerv2.go#L77-L86

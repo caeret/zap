@@ -25,8 +25,8 @@ import (
 	"strings"
 	"sync"
 
-	"go.uber.org/zap/buffer"
-	"go.uber.org/zap/internal/bufferpool"
+	"github.com/caeret/zap/buffer"
+	"github.com/caeret/zap/internal/bufferpool"
 )
 
 var _stacktracePool = sync.Pool{

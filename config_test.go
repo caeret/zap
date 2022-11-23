@@ -25,10 +25,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/caeret/zap/zapcore"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
-	"go.uber.org/zap/zapcore"
 )
 
 func TestConfig(t *testing.T) {

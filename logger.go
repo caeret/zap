@@ -27,8 +27,8 @@ import (
 	"runtime"
 	"strings"
 
-	"go.uber.org/zap/internal/bufferpool"
-	"go.uber.org/zap/zapcore"
+	"github.com/caeret/zap/internal/bufferpool"
+	"github.com/caeret/zap/zapcore"
 )
 
 // A Logger provides fast, leveled, structured logging. All methods are safe

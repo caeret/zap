@@ -29,8 +29,8 @@ import (
 	"sync"
 	"time"
 
-	"go.uber.org/zap/internal"
-	"go.uber.org/zap/zapcore"
+	"github.com/caeret/zap/internal"
+	"github.com/caeret/zap/zapcore"
 )
 
 // ObservedLogs is a concurrency-safe, ordered collection of observed logs.
