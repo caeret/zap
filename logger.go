@@ -27,9 +27,9 @@ import (
 	"runtime"
 	"strings"
 
-	"go.uber.org/zap/internal/bufferpool"
-	"go.uber.org/zap/internal/stacktrace"
-	"go.uber.org/zap/zapcore"
+	"github.com/caeret/zap/internal/bufferpool"
+	"github.com/caeret/zap/internal/stacktrace"
+	"github.com/caeret/zap/zapcore"
 )
 
 // A Logger provides fast, leveled, structured logging. All methods are safe
@@ -79,6 +79,7 @@ func New(core zapcore.Core, options ...Option) *Logger {
 		errorOutput: zapcore.Lock(os.Stderr),
 		addStack:    zapcore.FatalLevel + 1,
 		clock:       zapcore.DefaultClock,
+		skipPKG:     map[string]struct{}{},
 	}
 	return log.WithOptions(options...)
 }
@@ -94,6 +95,7 @@ func NewNop() *Logger {
 		errorOutput: zapcore.AddSync(io.Discard),
 		addStack:    zapcore.FatalLevel + 1,
 		clock:       zapcore.DefaultClock,
+		skipPKG:     map[string]struct{}{},
 	}
 }
 

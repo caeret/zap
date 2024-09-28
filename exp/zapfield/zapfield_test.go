@@ -24,9 +24,9 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/caeret/zap"
+	"github.com/caeret/zap/zapcore"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 type (

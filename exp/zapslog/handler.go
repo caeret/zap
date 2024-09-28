@@ -27,9 +27,9 @@ import (
 	"log/slog"
 	"runtime"
 
-	"go.uber.org/zap"
-	"go.uber.org/zap/internal/stacktrace"
-	"go.uber.org/zap/zapcore"
+	"github.com/caeret/zap"
+	"github.com/caeret/zap/internal/stacktrace"
+	"github.com/caeret/zap/zapcore"
 )
 
 // Handler implements the slog.Handler by writing to a zap Core.

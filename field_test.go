@@ -28,9 +28,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/caeret/zap/internal/stacktrace"
+	"github.com/caeret/zap/zapcore"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap/internal/stacktrace"
-	"go.uber.org/zap/zapcore"
 )
 
 type username string
