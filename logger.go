@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 	"strings"
 
 	"go.uber.org/zap/internal/bufferpool"
@@ -54,6 +55,9 @@ type Logger struct {
 	callerSkip int
 
 	clock zapcore.Clock
+
+	callerPKG string
+	skipPKG   map[string]struct{}
 }
 
 // New constructs a new Logger from the provided zapcore.Core and Options. If
@@ -373,7 +377,7 @@ func (log *Logger) check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
 	// Adding the caller or stack trace requires capturing the callers of
 	// this function. We'll share information between these two.
 	stackDepth := stacktrace.First
-	if addStack {
+	if log.callerPKG != "" || addStack {
 		stackDepth = stacktrace.Full
 	}
 	stack := stacktrace.Capture(log.callerSkip+callerSkipOffset, stackDepth)
@@ -391,7 +395,26 @@ func (log *Logger) check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
 		return ce
 	}
 
-	frame, more := stack.Next()
+	var (
+		frame runtime.Frame
+		more  bool
+	)
+	if log.callerPKG != "" {
+	frameCheck:
+		for frame, more = stack.Next(); more; frame, more = stack.Next() {
+			path := pkgFilePath(&frame)
+			for skip := range log.skipPKG {
+				if strings.HasPrefix(path, skip) {
+					continue frameCheck
+				}
+			}
+			if strings.HasPrefix(path, log.callerPKG) {
+				break
+			}
+		}
+	} else {
+		frame, more = stack.Next()
+	}
 
 	if log.addCaller {
 		ce.Caller = zapcore.EntryCaller{
@@ -436,4 +459,34 @@ func terminalHookOverride(defaultHook, override zapcore.CheckWriteHook) zapcore.
 		return defaultHook
 	}
 	return override
+}
+
+func pkgFilePath(frame *runtime.Frame) string {
+	pre := pkgPrefix(frame.Function)
+	post := pathSuffix(frame.File)
+	if pre == "" {
+		return post
+	}
+	return pre + "/" + post
+}
+
+// pkgPrefix returns the import path of the function's package with the final
+// segment removed.
+func pkgPrefix(funcName string) string {
+	const pathSep = "/"
+	end := strings.LastIndex(funcName, pathSep)
+	if end == -1 {
+		return ""
+	}
+	return funcName[:end]
+}
+
+// pathSuffix returns the last two segments of path.
+func pathSuffix(path string) string {
+	const pathSep = "/"
+	lastSep := strings.LastIndex(path, pathSep)
+	if lastSep == -1 {
+		return path
+	}
+	return path[strings.LastIndex(path[:lastSep], pathSep)+1:]
 }

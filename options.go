@@ -184,3 +184,20 @@ func WithClock(clock zapcore.Clock) Option {
 		log.clock = clock
 	})
 }
+
+func WithCallerPKG(pkg string) Option {
+	return optionFunc(func(logger *Logger) {
+		logger.callerPKG = pkg
+	})
+}
+
+func WithSkipPKG(pkgs ...string) Option {
+	return optionFunc(func(logger *Logger) {
+		if logger.skipPKG == nil {
+			logger.skipPKG = make(map[string]struct{})
+		}
+		for _, pkg := range pkgs {
+			logger.skipPKG[pkg] = struct{}{}
+		}
+	})
+}
